@@ -1,29 +1,30 @@
 import Data.Function
 import Data.Maybe
 
-discriminant :: Float -> Float -> Float -> Maybe Float
+data Roots = Root Double | Roots Double Double deriving (Show)
+
+discriminant :: Double -> Double -> Double -> Maybe Double
 discriminant a b c = do
   let d = b * b - 4 * a * c
   if d < 0
     then Nothing
     else Just(d)
 
--- div' = (/) `on` fromIntegral
-
-roots :: Float -> Float -> Float -> Maybe [Float]
+roots :: Double -> Double -> Double -> Maybe Roots
 roots a b 0 = -- one root
   let top = -1 * b
       bottom = 2 * a
-      in Just $ [top / bottom]
+      x = top / bottom
+      in Just $ Root x
 
 roots a b d = -- two roots
   let top = \sign -> (-1 * b) + (sign) * sqrt d
       bottom = 2 * a
       x1 = (top 1) / bottom
       x2 = (top (-1.0)) / bottom
-      in Just $ [x1, x2]
+      in Just $ Roots x1 x2
 
-calculate :: Float -> Float -> Float -> Maybe [Float]
+calculate :: Double -> Double -> Double -> Maybe Roots
 calculate a b c =
   -- d <- discriminant a b c
   -- roots a b d
@@ -38,5 +39,4 @@ main = do
   c <- getLine
 
   putStrLn "A"
-  -- calculate read a read b
-  -- putStrLn $ show $ calculate (read a) (read b) (read c)
+  putStrLn $ show $ calculate (read a) (read b) (read c)
