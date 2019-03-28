@@ -1,36 +1,33 @@
 import Data.Function
 import Data.Maybe
 
-discriminant :: Int -> Int -> Int -> Maybe Int
+discriminant :: Float -> Float -> Float -> Maybe Float
 discriminant a b c = do
   let d = b * b - 4 * a * c
   if d < 0
     then Nothing
     else Just(d)
 
-div' = (/) `on` fromIntegral
+-- div' = (/) `on` fromIntegral
 
-getX' :: Int -> Int -> Int -> [Maybe Float]
-getX' a b 0 =
+roots :: Float -> Float -> Float -> Maybe [Float]
+roots a b 0 = -- one root
   let top = -1 * b
       bottom = 2 * a
-      in [Just $ top `div'` bottom]
-getX' a b d =
-  -- let v = sqrt (fromIntegral d)
-  let v = sqrt 0.2
-      top = \sign -> -1 * b + sign * v
-      bottom = 2 * a
-      in [Just 1.0]
-      -- in [Just $ top 1 `div'` bottom]
-  --   Just $(-1 * b + sqrt(d)) `div'` (2 * a)),
-  --   Just ((-1 * b - sqrt(d)) `div'` (2 * a))
-  -- ]
+      in Just $ [top / bottom]
 
--- calculate :: Int -> Int -> Int -> [Maybe Int]
--- calculate a b c = do
---   -- d <- fmap (+ 1) $ discriminant a b c
---   d <- fmap (+ 1) $ 1
---   getX' a b d
+roots a b d = -- two roots
+  let top = \sign -> (-1 * b) + (sign) * sqrt d
+      bottom = 2 * a
+      x1 = (top 1) / bottom
+      x2 = (top (-1.0)) / bottom
+      in Just $ [x1, x2]
+
+calculate :: Float -> Float -> Float -> Maybe [Float]
+calculate a b c =
+  -- d <- discriminant a b c
+  -- roots a b d
+  discriminant a b c >>= roots a b
 
 main = do
   putStrLn "a="
