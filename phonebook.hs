@@ -3,10 +3,10 @@ data Entry = Entry { name :: String
                    } deriving(Show)
 
 data Phonebook = Phonebook { entries :: [Entry] } deriving(Show)
-data State = State Int
+data State = State Int | InitState
 
 command :: Phonebook -> State -> IO()
-command phonebook (State 0) = do
+command phonebook InitState = do
   let lines = ["Please, select a command",
                "0. Help",
                "1. Add new Entry",
@@ -24,14 +24,13 @@ command phonebook (State 1) = do
   let entry = Entry{name = name, phone = phone}
       currentEntries = entries phonebook
       resultEntries = currentEntries ++ [entry]
-  command Phonebook{ entries = resultEntries } (State 0)
+  command Phonebook{ entries = resultEntries } InitState
 
 command phonebook (State 2) = do
   putStrLn $ show $ phonebook
-  command phonebook (State 0)
+  command phonebook InitState
 
 main =
   let me = Entry{name = "Kolqa", phone = "+712345" }
       phonebook = Phonebook [me]
-      initState = State 0
-  in command phonebook initState
+  in command phonebook InitState
