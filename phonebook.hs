@@ -10,9 +10,9 @@ instance Eq Entry where
   a == b = (name a == name b) && (phone a == phone b)
 
 -- data State = State Int | InitState
-data Command = HelpCommand | RawCommand String
-data Response = PrintHelp
-data State = InitState Phonebook | Wait Phonebook | State Phonebook Int
+data Command =  RawCommand String | HelpCommand | ShowPhonebookCommand | AddEntryCommand String String | DeleteEntryCommand String | Quit
+data Response = PrintHelp | PrintPhonebook
+data State = InitState Phonebook | Wait Phonebook
 
 addEntry :: Phonebook -> String -> String -> Phonebook
 addEntry phonebook name phone =
@@ -34,51 +34,48 @@ deleteEntry phonebook n =
       in phonebook { entries = resultEntries }
     Nothing -> phonebook
 
--- --- --- COMMANDS --- ---
--- command :: State -> IO()
--- command InitState phonebook = do
---   let lines = ["Please, select a command",
---                "0. Help",
---                "1. Add new Entry",
---                "2. Delete Entry",
---                "3. Show Phonebook"]
---   mapM_ putStrLn lines
---   input <- getLine
---   command phonebook (State $ read $ input)
-
--- command State phonebook 1 = do
---   putStrLn "Fill name:"
---   name <- getLine
---   putStrLn "Fill phone:"
---   phone <- getLine
---   putStrLn "Entry has been successfully added"
---   command (addEntry phonebook name phone) InitState
-
--- command State phonebook 2 = do
---   putStrLn "Fill name:"
---   name <- getLine
---   putStrLn "Entry has been successfully deleted"
---   command (deleteEntry phonebook name) InitState
-
--- command State phonebook 3 = do
---   putStrLn $ show $ phonebook
---   command phonebook InitState
-
 getCommand :: State -> IO Command
 getCommand (InitState _) = do
   return HelpCommand
 
 getCommand (Wait _) = do
   s <- getLine
-  getCommand' $ RawCommand $ head s
+  getCommand' $ RawCommand $ s
 
 getCommand' :: Command -> IO Command
-getCommand' RawCommand "exit" = return Quit
-getCommand' RawCommand "0" = return HelpCommand
+getCommand' (RawCommand "exit") = return Quit
+getCommand' (RawCommand "0") = return HelpCommand
+getCommand' (RawCommand "1") = do
+  putStrLn "Fill name:"
+  name <- getLine
+  putStrLn "Fill phone:"
+  phone <- getLine
+  return $ AddEntryCommand name phone
+
+getCommand' (RawCommand "2") = do
+  putStrLn "Delete Entry with name:"
+  name <- getLine
+  return $ DeleteEntryCommand name
+
+getCommand' (RawCommand "3") = return ShowPhonebookCommand
 
 handleCommand :: State -> Command -> (State, Response)
 handleCommand (InitState phonebook) HelpCommand =
   (Wait phonebook, PrintHelp)
+
+handleCommand (Wait phonebook) HelpCommand =
+  (Wait phonebook, PrintHelp)
+
+handleCommand (Wait phonebook) ShowPhonebookCommand =
+  (Wait phonebook, PrintPhonebook)
+
+handleCommand (Wait phonebook) (AddEntryCommand name phone)=
+  let newPhonebook = addEntry phonebook name phone
+  in (Wait newPhonebook, PrintPhonebook)
+
+handleCommand (Wait phonebook) (DeleteEntryCommand name)=
+  let newPhonebook = deleteEntry phonebook name
+  in (Wait newPhonebook, PrintPhonebook)
 
 handleResponse :: State -> Response -> IO ()
 handleResponse _ PrintHelp = do
@@ -88,6 +85,10 @@ handleResponse _ PrintHelp = do
                "2. Delete Entry",
                "3. Show Phonebook"]
   mapM_ putStrLn lines
+
+handleResponse (Wait phonebook) PrintPhonebook = do
+  putStrLn "Current Phonebook:"
+  putStrLn $ show $ phonebook
 
 loop :: State -> IO()
 loop state = do
