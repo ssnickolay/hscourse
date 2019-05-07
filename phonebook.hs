@@ -1,4 +1,5 @@
 import Data.List
+import Test.QuickCheck
 
 data Entry = Entry { name :: String
                    , phone :: String
@@ -9,7 +10,6 @@ data Phonebook = Phonebook { entries :: [Entry] } deriving(Show)
 instance Eq Entry where
   a == b = (name a == name b) && (phone a == phone b)
 
--- data State = State Int | InitState
 data Command =  RawCommand String | HelpCommand | ShowPhonebookCommand | AddEntryCommand String String | DeleteEntryCommand String | Quit
 data Response = PrintHelp | PrintPhonebook
 data State = InitState Phonebook | Wait Phonebook
@@ -21,9 +21,33 @@ addEntry phonebook name phone =
      resultEntries = currentEntries ++ [entry]
   in phonebook{ entries = resultEntries }
 
+instance Arbitrary Entry where
+  arbitrary = do
+    name <- arbitrary
+    phone <- arbitrary
+    return $ Entry{name = name, phone = phone}
+
+instance Arbitrary Phonebook where
+  arbitrary = do
+    entry <- arbitrary
+    return (Phonebook [entry])
+
+prop_AddEntry phonebook name phone =
+    let Phonebook{ entries = entries } = addEntry phonebook name phone
+        (old:Entry { name = n, phone = p }:[]) = entries
+  in name == n && phone == p
+
 findEntry :: Phonebook -> String -> Maybe Entry
 findEntry phonebook value =
   find (\a -> name a == value) (entries $ phonebook)
+
+prop_SuccessFindEntry phonebook =
+  let [entry] = entries phonebook
+      foundedEntry = findEntry phonebook (name entry)
+  in foundedEntry == Just(entry)
+
+prop_NothingFindEntry phonebook value =
+  findEntry phonebook (value ++ "salt") == Nothing
 
 deleteEntry :: Phonebook -> String -> Phonebook
 deleteEntry phonebook n =
@@ -102,3 +126,9 @@ main =
   let me = Entry{name = "Kolqa", phone = "+712345" }
       phonebook = Phonebook [me]
   in loop $ InitState phonebook
+
+
+test = do
+  quickCheck prop_AddEntry
+  quickCheck prop_SuccessFindEntry
+  quickCheck prop_NothingFindEntry
